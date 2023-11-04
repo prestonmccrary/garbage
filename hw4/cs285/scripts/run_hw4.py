@@ -39,11 +39,33 @@ def collect_mbpo_rollout(
     rollout_len: int = 1,
 ):
     obs, acs, rewards, next_obs, dones = [], [], [], [], []
+
+
     for _ in range(rollout_len):
         # TODO(student): collect a rollout using the learned dynamics models
         # HINT: get actions from `sac_agent` and `next_ob` predictions from `mb_agent`.
         # Average the ensemble predictions directly to get the next observation.
         # Get the reward using `env.get_reward`.
+
+        ac = sac_agent.get_action(ob)
+
+        ac = np.expand_dims(ac, axis=0)
+
+        ob = np.expand_dims(ob, axis=0)
+
+        next_ob = np.mean(np.array(
+            [ mb_agent.get_dynamics_predictions(i, ob, ac)  for i in range(mb_agent.ensemble_size)]
+        ), axis = 0)
+
+
+
+        rew = env.get_reward(next_ob, ac)[0][0]
+
+
+        ob = np.squeeze(ob, axis=0)
+        ac = np.squeeze(ac, axis=0) 
+        next_ob = np.squeeze(next_ob, axis=0)
+
 
         obs.append(ob)
         acs.append(ac)
@@ -176,11 +198,11 @@ def run_training_loop(
             # HINT: train each dynamics model in the ensemble with a *different* batch of transitions!
             # Use `replay_buffer.sample` with config["train_batch_size"].
 
-            for i in range(actor_agent.ensemble_size):
+            for i in range(mb_agent.ensemble_size):
 
                 smlpe = replay_buffer.sample(config["train_batch_size"])
 
-                step_losses.append(actor_agent.update(
+                step_losses.append(mb_agent.update(
                     i,
                     smlpe["observations"],
                     smlpe["actions"],
@@ -228,11 +250,11 @@ def run_training_loop(
                 # train SAC
                 batch = sac_replay_buffer.sample(sac_config["batch_size"])
                 sac_agent.update(
-                    batch["observations"],
-                    batch["actions"],
-                    batch["rewards"],
-                    batch["next_observations"],
-                    batch["dones"],
+                    ptu.from_numpy(batch["observations"]),
+                    ptu.from_numpy(batch["actions"]),
+                    ptu.from_numpy(batch["rewards"]),
+                    ptu.from_numpy(batch["next_observations"]),
+                    ptu.from_numpy( batch["dones"]),
                     i,
                 )
 
