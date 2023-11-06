@@ -153,7 +153,7 @@ class ModelBasedAgent(nn.Module):
 
         delta_obs_noramlized = self.dynamics_models[i](norm_obs_acs)
 
-        pred_next_obs = obs + (delta_obs_noramlized + self.obs_delta_mean) * self.obs_delta_std
+        pred_next_obs = obs + (delta_obs_noramlized * self.obs_delta_std) +  self.obs_delta_mean
 
         return ptu.to_numpy(pred_next_obs)
 

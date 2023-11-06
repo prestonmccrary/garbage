@@ -59,12 +59,13 @@ def collect_mbpo_rollout(
 
 
 
-        rew = env.get_reward(next_ob, ac)[0][0]
 
 
         ob = np.squeeze(ob, axis=0)
         ac = np.squeeze(ac, axis=0) 
         next_ob = np.squeeze(next_ob, axis=0)
+
+        rew = env.get_reward(next_ob, ac)[0]
 
 
         obs.append(ob)
@@ -150,8 +151,8 @@ def run_training_loop(
         else:
             # TODO(student): collect at least config["batch_size"] transitions with our `actor_agent`
             trajs, envsteps_this_batch = utils.sample_trajectories(
-                env, 
-                utils.RandomPolicy(env), 
+                env,
+                actor_agent, 
                 config["batch_size"],
                 ep_len
                 )   
